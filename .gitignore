@@ -12,7 +12,22 @@
 **/.ninja_deps
 
 # Objects, libs, binaries
-*.o *.obj *.lo *.la *.a *.lib *.dll *.so *.dylib *.exe *.out *.app *.pdb *.pch *.ilk
+*.o
+*.obj
+*.lo
+*.la
+*.a
+*.lib
+*.dll
+*.so
+*.dylib
+*.exe
+*.out
+*.app
+*.pdb
+*.pch
+*.ilk
+*.bin
 
 # Generated code + coverage + deps
 *.mod *.gcno *.gcda *.gcov *.d *.rsp
