@@ -30,6 +30,7 @@ cmake-build-*/
 
 # Logs, caches, temps
 *.log *.cache *.swp *.tmp
+imgui.ini
 
 # OS cruft
 .DS_Store Thumbs.db desktop.ini
