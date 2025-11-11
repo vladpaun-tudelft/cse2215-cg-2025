@@ -1,41 +1,42 @@
-# Prerequisites
-*.d
+# CMake/Ninja (any depth)
+**/[Bb]uild*/
+**/out/
+**/CMakeFiles/
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/install_manifest.txt
+**/Testing/
+**/CTestTestfile.cmake
+**/build.ninja
+**/.ninja_log
+**/.ninja_deps
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# Objects, libs, binaries
+*.o *.obj *.lo *.la *.a *.lib *.dll *.so *.dylib *.exe *.out *.app *.pdb *.pch *.ilk
 
-# Precompiled Headers
-*.gch
-*.pch
+# Generated code + coverage + deps
+*.mod *.gcno *.gcda *.gcov *.d *.rsp
 
-# Linker files
-*.ilk
+# VS Code / CLion
+.vscode/
+*.code-workspace
+.idea/
+cmake-build-*/
 
-# Debugger Files
-*.pdb
+# Visual Studio
+.vs/
+[Bb]in/ [Oo]bj/
+*.sln *.vcxproj* *.user *.suo *.opensdf *.opendb *.VC.db
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+# Logs, caches, temps
+*.log *.cache *.swp *.tmp
 
-# Fortran module files
-*.mod
-*.smod
+# OS cruft
+.DS_Store Thumbs.db desktop.ini
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+# Archives
+*.zip *.7z *.tar *.tar.gz
 
-# Executables
-*.exe
-*.out
-*.app
-
-# debug information files
-*.dwo
+# Optional
+# compile_commands.json
+# *.spv
