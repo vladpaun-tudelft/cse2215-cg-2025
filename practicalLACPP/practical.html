@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Linear Algebra and C++</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {  background-color: #f8f8f8; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ef2929; } /* Alert */
+    code span.an { color: #8f5902; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #c4a000; } /* Attribute */
+    code span.bn { color: #0000cf; } /* BaseN */
+    code span.cf { color: #204a87; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4e9a06; } /* Char */
+    code span.cn { color: #000000; } /* Constant */
+    code span.co { color: #8f5902; font-style: italic; } /* Comment */
+    code span.cv { color: #8f5902; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #8f5902; font-weight: bold; font-style: italic; } /* Documentation */
+    code span.dt { color: #204a87; } /* DataType */
+    code span.dv { color: #0000cf; } /* DecVal */
+    code span.er { color: #a40000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #0000cf; } /* Float */
+    code span.fu { color: #000000; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #8f5902; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #204a87; font-weight: bold; } /* Keyword */
+    code span.op { color: #ce5c00; font-weight: bold; } /* Operator */
+    code span.ot { color: #8f5902; } /* Other */
+    code span.pp { color: #8f5902; font-style: italic; } /* Preprocessor */
+    code span.sc { color: #000000; } /* SpecialChar */
+    code span.ss { color: #4e9a06; } /* SpecialString */
+    code span.st { color: #4e9a06; } /* String */
+    code span.va { color: #000000; } /* Variable */
+    code span.vs { color: #4e9a06; } /* VerbatimString */
+    code span.wa { color: #8f5902; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <style>
+/*
+ * Slightly modified version of the following theme:;
+ * https://github.com/markdowncss/air
+ */
+html {
+  font-size: 12px;
+}
+
+@media print {
+  *:before,
+  *:after {
+    background: transparent !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  html {
+    font-size: 14px;
+  }
+  body {
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
+
+  a,
+  a:visited {
+    text-decoration: underline;
+  }
+
+  a[href]:after {
+    content: " (" attr(href) ")";
+  }
+
+  abbr[title]:after {
+    content: " (" attr(title) ")";
+  }
+
+  a[href^="#"]:after,
+  a[href^="javascript:"]:after {
+    content: "";
+  }
+
+  pre,
+  blockquote {
+    border: 1px solid #999;
+    page-break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr,
+  img {
+    page-break-inside: avoid;
+  }
+
+  img {
+    max-width: 100% !important;
+  }
+
+  p,
+  h2,
+  h3 {
+    orphans: 3;
+    widows: 3;
+  }
+
+  h2,
+  h3 {
+    page-break-after: avoid;
+  }
+}
+
+@media screen and (min-width: 32rem) and (max-width: 48rem) {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media screen and (min-width: 48rem) {
+  html {
+    font-size: 16px;
+  }
+}
+
+body {
+  line-height: 1.85;
+  padding-bottom: 2rem;
+}
+
+p,
+.air-p {
+  font-size: 1rem;
+  margin-bottom: 1.3rem;
+}
+
+h1,
+.air-h1,
+h2,
+.air-h2,
+h3,
+.air-h3,
+h4,
+.air-h4 {
+  margin: 1.414rem 0 .5rem;
+  font-weight: inherit;
+  line-height: 1.42;
+}
+
+h1,
+.air-h1 {
+  margin-top: 0;
+  font-size: 3.998rem;
+}
+
+h2,
+.air-h2 {
+  font-size: 2.827rem;
+}
+
+h3,
+.air-h3 {
+  font-size: 1.999rem;
+}
+
+h4,
+.air-h4 {
+  font-size: 1.414rem;
+}
+
+h5,
+.air-h5 {
+  font-size: 1.121rem;
+}
+
+h6,
+.air-h6 {
+  font-size: .88rem;
+}
+
+small,
+.air-small {
+  font-size: .707em;
+}
+
+/* https://github.com/mrmrs/fluidity */
+
+img,
+canvas,
+iframe,
+video,
+svg,
+select,
+textarea {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+
+  max-width: 100%;
+}
+
+figcaption {
+  text-align: center;
+}
+.subfigures {
+  text-align: center;
+}
+.subfigures figure {
+  float: left;
+  width: 50%;
+  margin:0;
+  display: inline-block;
+}
+.subfigures img {
+  display: inline-block;
+  width: 90%;
+}
+.subfigures figure figcaption {
+  display: inline-block;
+}
+
+@import url(http://fonts.googleapis.com/css?family=Open+Sans:300italic,300);
+
+body {
+  color: #444;
+  font-family: 'Open Sans', Helvetica, sans-serif;
+  font-weight: 300;
+  margin: 6rem auto 1rem;
+  max-width: 48rem;
+  text-align: justify;
+}
+
+/*img {
+  border-radius: 50%;
+  height: 200px;
+  margin: 0 auto;
+  width: 200px;
+}*/
+
+a,
+a:visited {
+  color: #3498db;
+}
+
+a:hover,
+a:focus,
+a:active {
+  color: #2980b9;
+}
+
+pre:not(.sourceCode) {
+  background-color: #fafafa;
+}
+pre {
+  padding: 1rem;
+  text-align: left;
+}
+
+blockquote {
+  margin: 0;
+  border-left: 5px solid #7a7a7a;
+  font-style: italic;
+  padding: 1.33em;
+  text-align: left;
+}
+
+ul,
+ol,
+li {
+  text-align: left;
+}
+
+p {
+  color: #777;
+}
+
+/*
+ * Copied from w3schools.com:
+ * https://www.w3schools.com/css/css_table.asp
+ *
+ * Table header colour changed to CGV home style (taken from CGV Powerpoint template)
+ */
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+table td, table th {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+table tr:nth-child(even){background-color: #f2f2f2;}
+/* table tr:hover {background-color: #ddd;} */
+table th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: left;
+  background-color: #10A5D7;
+  color: white;
+}
+
+
+</style>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <div style="overflow:auto;">
+  	<p style="float:left;margin:0;"><b>CSE2215</b> - Computer Graphics</p><p style="float:right;margin:0;">Elmar Eisemann, Martin Skrodzki, Michael Weinmann, Ricardo Marroqium </p>
+  </div>
+
+  <hr>
+  <br/>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Linear Algebra and C++</h1>
+</header>
+<p>This week’s practical is split up into two generic <code>c++</code> exercises and some basic linear algebra operations on vectors and matrices. Also, we will use these operations to understand how solid (convex) objects are defined via cutting planes.</p>
+<h3 id="rules">Rules</h3>
+<p>For this practical the following rules apply:</p>
+<p><strong>General</strong></p>
+<ul>
+<li>We strongly recommend to do the assignment <strong>individually</strong>.</li>
+<li>This practical will help you prepare for the programming exam.</li>
+<li>We ask you to give the practical a try yourself to see whether you can solve it. Remember that the programming exam will also be an individual assessment.</li>
+<li>As always, you can approach the TAs with questions during the lab sessions.</li>
+<li>Your should compile your code <strong>on Windows with Visual Studio 2022</strong> (using the default MSVC toolchain). Otherwise, the TAs might not be able to help you with related issues.</li>
+<li>Submission on Brightspace is not required for this practical.</li>
+</ul>
+<p><strong>Evaluation</strong></p>
+<ul>
+<li>This practical is ungraded.</li>
+<li>We provide you with a test framework under <code>tests</code> for you to self-test your solutions.</li>
+<li>To use the test framework, compile and run the target <code>Bachelor_Practical1_1_Tests</code> (for part 1) or <code>Bachelor_Practical1_2_Tests</code> (for part 2).</li>
+<li>If it prints “xxx failed”, it means some of your solutions are incorrect. See the error messages in the console for a detailed explanation.</li>
+<li>If it prints “All tests passed”, you are good to go!</li>
+</ul>
+<p>The tests are based on the <a href="https://github.com/catchorg/Catch2">Catch2 unit testing framework</a>, included as part of the practical. For some of the subsequent exercises you need to write these tests yourself. For additional information on how to write tests with Catch2 we refer to <a href="https://github.com/catchorg/Catch2/blob/devel/docs/tutorial.md#top">their documentation</a>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">unsigned</span> <span class="dt">int</span> Factorial( <span class="dt">unsigned</span> <span class="dt">int</span> number ) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> number &lt;= <span class="dv">1</span> ? number : Factorial(number-<span class="dv">1</span>)*number;</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>TEST_CASE( <span class="st">&quot;Factorials are computed&quot;</span>, <span class="st">&quot;[factorial]&quot;</span> ) {</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    REQUIRE( Factorial(<span class="dv">1</span>) == <span class="dv">1</span> );</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    REQUIRE( Factorial(<span class="dv">2</span>) == <span class="dv">2</span> );</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    REQUIRE( Factorial(<span class="dv">3</span>) == <span class="dv">6</span> );</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    REQUIRE( Factorial(<span class="dv">10</span>) == <span class="dv">3628800</span> );</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="code-organization">Code Organization</h3>
+<p>The project that you received consists of several files and folders:</p>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 84%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>src</code></td>
+<td>Directory contains all the <code>c++</code> source files (both <code>.cpp</code> implementation and <code>.h</code> header files)</td>
+</tr>
+<tr class="even">
+<td><code>framework</code></td>
+<td>Contains the framework code (code shared between different practicals)</td>
+</tr>
+<tr class="odd">
+<td><code>CMakeLists.txt</code></td>
+<td>Tells the <code>CMake</code> build system how to compile/link the program</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>src</code> directory contains the only files that you have to interact with. The practicals are set up in such a way that you only have to modify one or two files each time. None of the practicals should require you to change <code>framework</code> or <code>CMakeLists.txt</code>.</p>
+<h1 id="part-1-c-exercises">Part 1: C++ Exercises</h1>
+<p>For all exercises under this part, <strong>your implementation should go into <code>src/cpp/your_code_here.h</code></strong>.</p>
+<h2 id="statistics">1. Statistics</h2>
+<p>This function is declared as:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">std::</span>pair&lt;<span class="dt">float</span>, <span class="dt">float</span>&gt; statistics(<span class="bu">std::</span>span&lt;<span class="at">const</span> <span class="dt">float</span>&gt; values);</span></code></pre></div>
+<p>The input to the function will be a <code>std::span</code> of valid floating point values (no <code>NaN</code>, <code>+inf</code> or <code>-inf</code>). A <code>std::span</code> is a view into either an <code>std::vector</code> or <code>std::array</code> and operates in a similar way. The output is a pair of values, where the first value should contain the <code>mean</code> of the input, and the second value the standard deviation over those values. If the span is empty then your code should return <code>0.0f</code> for both values. As an example, given the input <code>[-4,-2,0,0,0,2,2,2]</code>, the function should return the pair <code>{ 0.0f, 2.0f }</code>.</p>
+<h2 id="tree-traversal">2. Tree Traversal</h2>
+<p>This function is defined as:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="dt">float</span> countTree(<span class="at">const</span> Tree&amp; t, <span class="dt">bool</span> countOnlyEvenLevels);</span></code></pre></div>
+<p>The input to the function will be a tree object and a boolean value defining the behavior of the tree traversal. The Tree structure is defined as:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Tree {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">float</span> value;</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">std::</span>vector&lt;Tree&gt; children;</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>};</span></code></pre></div>
+<p>This struct encodes a tree structure, where each tree can contain other trees as children, and contains a value.</p>
+<p>You will need to write the function countTree so that when called, the function will go through the tree and compute the sum of all the values stored in it. If the boolean value countOnlyEvenLevels is set to true, then only the values on even levels of the tree should be included in the sum (the root is at level 0 and considered an even level). You may define any additional struct or function (hint: use recursion).</p>
+<h1 id="part-2-linear-algebra-applications">Part 2: Linear Algebra Applications</h1>
+<p>For all exercises under this part, <strong>your implementation should go into <code>src/linear/your_code_here.cpp</code></strong>. Note that during the first part of the exercise, you define the solutions in the header file, whereas in this exercise you define it in the source file. Both are possible practices of implementing CPP functions.</p>
+<h2 id="opengl-math-library">OpenGL Math Library</h2>
+<p>In this practical we will use the <a href="https://glm.g-truc.net/0.9.9/index.html">glm</a> library to do this for us. <code>glm</code> provides vectors as well as many operations that can be applied to these types.</p>
+<p>We can create a 2D/3D <code>glm</code> vector in various ways:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>glm::vec3 myFirstVec3 { <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span> }; <span class="co">// Creates a vector (1, 2, 3)</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>glm::vec3 singleValueVec3 { <span class="dv">5</span> }; <span class="co">// Creates a vector (5, 5, 5)</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>glm::vec2 multiValueVec2 { <span class="dv">1</span>, <span class="dv">2</span> }; <span class="co">// Creates a vector (1, 2)</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>glm::vec3 multiValueVec3 { myFirstVec2, <span class="dv">3</span> }; <span class="co">// Creates a vector (1, 2, 3)</span></span></code></pre></div>
+<p>For matrices, this practical will use a custom struct:</p>
+<pre><code>// The matrix is defined as:
+// | m00  m01  m02 |
+// | m10  m11  m12 |
+// | m20  m21  m22 |
+//
+// The columns are stored as Vector3&#39;s, where:
+// col1 = (m00, m10, m20)
+// col2 = (m01, m11, m21)
+// col3 = (m02, m12, m22)
+//
+// !!! DO NOT MODIFY THIS STRUCT !!!
+struct Matrix3 {
+    glm::vec3 col1, col2, col3;
+};</code></pre>
+<p>You can find the full <code>glm</code> manual <a href="https://github.com/g-truc/glm/blob/0.9.9.2/doc/manual.pdf">here</a>.</p>
+<h2 id="basic-linear-algebra-operations">0. Basic Linear Algebra Operations</h2>
+<p>This part of the exercise allows you to practice your C++ programming skills while revisiting several aspects of the Linear Algebra recap lecture.</p>
+<h3 id="vector-operations">Vector Operations</h3>
+<p>In this exercise, you are to implement several operations for vectors. Specifically, we ask you to implement:</p>
+<ul>
+<li>multiplication of a vector and a scalar</li>
+<li>dot product for three-dimensional vectors</li>
+<li>the cross product for vectors (see <a href="https://ocw.tudelft.nl/course-lectures/cross-product/">https://ocw.tudelft.nl/course-lectures/cross-product/</a> if you have not encountered it before)</li>
+<li>length of a vector</li>
+</ul>
+<p>You are <strong>not</strong> allowed to use <code>glm</code> functionality; you <strong>must</strong> write these functions yourself.</p>
+<h3 id="matrix-operations">Matrix Operations</h3>
+<p>In this exercise, you are to implement several operations for matrices. We ask you to implement:</p>
+<ul>
+<li>multiplication of a matrix with a scalar</li>
+<li>transpose of a matrix</li>
+<li>determinant of a matrix (see <a href="https://www.tudelft.nl/en/eemcs/study/online-education/math-explained/linear-algebra/#c144161">https://www.tudelft.nl/en/eemcs/study/online-education/math-explained/linear-algebra/#c144161</a> if you have not encountered it before)</li>
+<li>inverse of a matrix</li>
+</ul>
+<p>For these, you may make use of <code>glm::vector</code> functionality such as <code>glm::dot</code>.</p>
+<h2 id="ordering-vertices-of-a-convex-n-gon">1. Ordering vertices of a convex n-Gon</h2>
+<p>In this first exercise, you are given a set of vertices of a potentially irregular n-Gon. All vertices are residing in some plane in 3D. You may further assume that the n-Gon itself is convex. Your task is to provide an ordered list of the indices of the n-Gon vertices, where the order can be either clockwise or counterclockwise. The provided visual debug can help you in your development. A correct solution should show a continuous gradient around the n-Gon.</p>
+<h2 id="drawing-a-convex-solid">2. Drawing a convex Solid</h2>
+<p>In this exercise, you will render the faces and the vertices of a polyhedron, a convex solid that is given as an intersection of half-spaces. That is, you are given a set of planes with a base point and a normal oriented towards the center of the solid, when seen from the base point. Your tasks are:</p>
+<ul>
+<li>Given one of these planes, compute a set of four points that lie on the plane, and together, form a rectangle. Make sure that the points are returned in either clockwise or counter-clockwise order, otherwise the rendering will look incorrect. Find hints on how to approach this in the <code>rectangleOnPlane</code> method of <code>src/linear/your_code_here.cpp</code>. If you want to debug your code, feel free to use the drawing capabilities of <code>main.cpp</code> to visualize the points you computed. <strong>Note:</strong> In the visualization, it’s really about passing four points that lie on that plane. The rectangles can be tiny, intersect, be rotated, … whatever, we don’t care. The one thing you should check is that the four points actually lie on the plane and have the shape of (roughly) a square.</li>
+<li>Given all planes that define a solid, compute the vertices of the solid. Find hints on how to approach this in the <code>verticesFromPlanes</code> method of <code>src/linear/your_code_here.cpp</code>. Again, if you want to debug your code, feel free to use the drawing capabilities of <code>main.cpp</code> to visualize the vertices you computed.</li>
+</ul>
+<p>Note that you can make use of <code>glm</code> vector functionality to solve these tasks.</p>
+<h2 id="area-of-a-convex-n-gon">3. Area of a convex n-Gon</h2>
+<p>In this final exercise, you will compute the area of a convex, possibly irregular, n-Gon. Given the vertices (of which there are at least 3, ordered either clock- or counterclockwise, which all lie on some 2D plane in 3D) your task is to compute the area of the n-Gon. You will do so by:</p>
+<ul>
+<li>Splliting the n-Gon into a set of triangles, see method <code>splitNGonIntoTriangles</code>.</li>
+<li>Providing a method that computes the area of a triangle, see method <code>areaOfTriangle</code>.</li>
+</ul>
+</body>
+</html>
