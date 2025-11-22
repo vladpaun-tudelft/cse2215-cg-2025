@@ -17,6 +17,7 @@ DISABLE_WARNINGS_POP()
 #include <fstream>
 #include <iostream>
 #include <random>
+#include <algorithm>
 
 enum class Exercise {
     VECTOR,

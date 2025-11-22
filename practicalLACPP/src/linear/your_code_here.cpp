@@ -1,3 +1,4 @@
+#include "glm/ext/vector_float2.hpp"
 #include "linear.h"
 // Suppress warnings in third-party code.
 #include <framework/disable_all_warnings.h>
@@ -8,6 +9,7 @@ DISABLE_WARNINGS_PUSH()
 DISABLE_WARNINGS_POP()
 #include <iostream>
 #include <algorithm>
+#include <cmath>
 
 std::string to_string(const Matrix3& matrix)
 {
@@ -20,9 +22,8 @@ std::string to_string(const Matrix3& matrix)
 // Multiplication of a vector with a scalar
 glm::vec3 mul(const glm::vec3& lhs, float rhs)
 {
-    glm::vec3 result {};
-    // Your solution goes here
-    // Do *NOT* use glm functionality here, but implement the multiplication yourself.
+    glm::vec3 result {lhs.x * rhs, lhs.y * rhs, lhs.z * rhs};
+    
     return result;
 }
 
@@ -32,16 +33,21 @@ float dot3(const glm::vec3& lhs, const glm::vec3& rhs)
     float result;
     // Your solution goes here
     // Do *NOT* use glm::dot here, but implement the dot product yourself.
-    result = 0.0f;
+    result = lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z;
     return result;
 }
 
 // Cross product of two vectors
-glm::vec3 cross3(const glm::vec3& lhs, const glm::vec3& rhs)
+glm::vec3 cross3(const glm::vec3& a, const glm::vec3& b)
 {
     glm::vec3 result;
     // Your solution goes here
     // Do *NOT* use glm::cross here, but implement the cross product yourself.
+    result = {
+        a.y * b.z - a.z * b.y,
+        a.z * b.x - a.x * b.z,
+        a.x * b.y - a.y * b.x
+    };
     return result;
 }
 
@@ -51,7 +57,7 @@ float length(const glm::vec3& lhs)
     float result;
     // Your solution goes here
     // Do *NOT* use glm::length here, but implement the length yourself.
-    result = 0.0f;
+    result = std::sqrt(lhs.x * lhs.x + lhs.y * lhs.y + lhs.z * lhs.z);
     return result;
 }
 
@@ -71,7 +77,9 @@ float length(const glm::vec3& lhs)
 Matrix3 mul(const Matrix3& lhs, float rhs)
 {
     Matrix3 result {};
-    // Your solution goes here
+    result.col1 = lhs.col1 * rhs;
+    result.col2 = lhs.col2 * rhs;
+    result.col3 = lhs.col3 * rhs;
     return result;
 }
 
@@ -87,7 +95,9 @@ Matrix3 mul(const Matrix3& lhs, float rhs)
 Matrix3 transpose(const Matrix3& m)
 {
     Matrix3 result {};
-    // Your solution goes here
+    result.col1 = {m.col1.x, m.col2.x, m.col3.x };
+    result.col2 = {m.col1.y, m.col2.y, m.col3.y };
+    result.col3 = {m.col1.z, m.col2.z, m.col3.z };
     return result;
 }
 
@@ -98,10 +108,41 @@ float determinant(const Matrix3& m)
 {
     float result;
     // Your solution goes here
-    result = 0.0f;
+    result = m.col1.x * m.col2.y * m.col3.z + 
+            m.col1.y * m.col2.z * m.col3.x +
+            m.col1.z * m.col2.x * m.col3.y - 
+            m.col1.z * m.col2.y * m.col3.x - 
+            m.col1.y * m.col2.x * m.col3.z - 
+            m.col1.x * m.col2.z * m.col3.y;
     return result;
 }
 
+float det2(const glm::vec2& col1, const glm::vec2& col2) {
+    return col1.x * col2.y - col1.y * col2.x;
+}
+Matrix3 computeMinors(const Matrix3& matrix) {
+    glm::vec3 col1 = matrix.col1;
+    glm::vec3 col2 = matrix.col2;
+    glm::vec3 col3 = matrix.col3;
+    return {
+        {
+            det2({ col2.y, col2.z }, { col3.y, col3.z }),
+            det2({ col2.x, col2.z }, { col3.x, col3.z }),
+            det2({ col2.x, col2.y }, { col3.x, col3.y }),
+        },
+        {
+            det2({ col1.y, col1.z }, { col3.y, col3.z }),
+            det2({ col1.x, col1.z }, { col3.x, col3.z }),
+            det2({ col1.x, col1.y }, { col3.x, col3.y }),
+        },
+        {
+            det2({ col1.y, col1.z }, { col2.y, col2.z }),
+            det2({ col1.x, col1.z }, { col2.x, col2.z }),
+            det2({ col1.x, col1.y }, { col2.x, col2.y }),
+
+        }
+    };
+}
 // Computing the inverse of the given matrix. If you implemented it correctly then matrix M multiplied
 // by its inverse should give the identity matrix). More information on how to compute the inverse of a
 // 3x3 matrix can be found here:
@@ -112,6 +153,15 @@ float determinant(const Matrix3& m)
 Matrix3 inverse(const Matrix3& matrix)
 {
     Matrix3 result {};
+    result = computeMinors(matrix);
+    result.col2.x = - result.col2.x;
+    result.col1.y = - result.col1.y;
+    result.col3.y = - result.col3.y;
+    result.col2.z = - result.col2.z;
+
+    result = transpose(result);
+    result = mul(result, 1 / determinant(matrix));
+
     // Hint:
     // You can follow, e.g., the method described here:
     // https://www.mathsisfun.com/algebra/matrix-inverse-minors-cofactors-adjugate.html
