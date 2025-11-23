@@ -185,7 +185,44 @@ std::vector<int> orderOfnGonVertices(const std::vector<glm::vec3> nGon)
     // You can assume that all vertices of the n-Gon are residing in some plane in 3D, that there are at least 3 vertices in the n-Gon,
     // and that the n-Gon itself is convex.
     // Your solution here, result should have the indices of the vertices from the n-Gon in either counter- or clockwise order.
-    return result;
+    glm::vec3 basis1 = nGon.front();
+    glm::vec3 basis2 = nGon.back();
+
+    std::vector<glm::vec2> newVecs;
+
+    for (glm::vec3 vector : nGon) {
+        newVecs.push_back({glm::dot(vector, basis1), glm::dot(vector, basis2)});
+    }
+
+    float center1 = 0;
+    float center2 = 0;
+    float n = (float) newVecs.size();
+
+    for (glm::vec2 v: newVecs) {
+        center1 += v.x;
+        center2 += v.y;
+    }
+
+    center1 /= n;
+    center2 /= n;
+
+    glm::vec2 centroid {center1, center2};
+
+    std::vector<float> angles;
+    for (glm::vec2 v : newVecs) {
+        glm::vec2 p = v - centroid;
+        float angle = std::atan2(p.y,p.x);
+        angles.push_back(angle);
+    }
+
+    std::vector<int> indexes(angles.size());
+    for (int i = 0; i < (int)indexes.size(); i++) {
+        indexes[i] = i;
+    }
+
+    std::sort(indexes.begin(), indexes.end(), [&](int a, int b) {return angles[a] < angles[b];});
+    
+    return indexes;
 }
 
 
