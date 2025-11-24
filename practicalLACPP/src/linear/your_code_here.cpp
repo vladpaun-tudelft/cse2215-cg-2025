@@ -246,7 +246,7 @@ std::array<glm::vec3, 4> rectangleOnPlane(const Plane& plane)
     // Regarding the visuals: It's really about passing four points that lie on that plane. The rectangles can be tiny, intersect, 
     // be rotated, ... whatever, we don't care. The one thing you should check is that the four points actually lie on the plane 
     // and have the shape of (roughly) a square.
-
+    // TODO
     return result;
 }
 
