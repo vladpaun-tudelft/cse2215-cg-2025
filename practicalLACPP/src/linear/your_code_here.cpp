@@ -225,6 +225,10 @@ std::vector<int> orderOfnGonVertices(const std::vector<glm::vec3> nGon)
     return indexes;
 }
 
+glm::vec3 normalize(const glm::vec3& v) {
+    float magnitude = std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+    return glm::vec3 {v.x / magnitude, v.y / magnitude, v.z / magnitude};
+} 
 
 // ==================================
 // ========    Exercise 2    ========
@@ -247,7 +251,23 @@ std::array<glm::vec3, 4> rectangleOnPlane(const Plane& plane)
     // be rotated, ... whatever, we don't care. The one thing you should check is that the four points actually lie on the plane 
     // and have the shape of (roughly) a square.
     // TODO
-    return result;
+    glm::vec3 p = plane.p;
+    glm::vec3 n = plane.n;
+
+    glm::vec3 v3 = normalize(n);
+    glm::vec3 a;
+    float min = std::min({std::abs(v3.x),std::abs(v3.y),std::abs(v3.z)});
+    if (v3.x == min) a = {1,0,0};
+    else if (v3.y == min) a = {0,1,0};
+    else a = {0,0,1};
+    glm::vec3 v1 = normalize(cross3(v3, a));
+    glm::vec3 v2 = normalize(cross3(v3, v1));
+
+    glm::vec3 r1 = p + v1 + v2;
+    glm::vec3 r2 = p + v1 - v2;
+    glm::vec3 r3 = p - v1 - v2;
+    glm::vec3 r4 = p - v1 + v2;
+    return {r1,r2,r3,r4};
 }
 
 // A solid can be given by the planes that are surrounding it. We want to find the vertices of a solid given by its planes.
@@ -268,6 +288,41 @@ std::vector<glm::vec3> verticesFromPlanes(std::span<const Plane> planes)
     // - Test whether the system has a solution (you can, e.g., use the determinant for matrices).
     // - If it has a solution, compute it (e.g., via using the inverse matrix).
     // - Assuming that the normal of the plane points to the inside of the solid, test for all other planes whether the computed point of intersection is indeed within the solid.
+
+    for (size_t i = 0; i < planes.size(); i++) {
+        for (size_t j = i + 1; j < planes.size(); j++) {
+            for (size_t k = j + 1; k < planes.size(); k++) {
+                Plane p1 = planes[i];
+                Plane p2 = planes[j];
+                Plane p3 = planes[k];
+
+                glm::vec3 n1 = p1.n;
+                glm::vec3 n2 = p2.n;
+                glm::vec3 n3 = p3.n;
+
+                Matrix3 m = {n1, n2, n3};
+                if (determinant(m) == 0) continue;
+                Matrix3 mT = transpose(m);
+                Matrix3 mTI = inverse(mT);
+                glm::vec3 u {dot3(n1, p1.p), dot3(n2, p2.p), dot3(n3, p3.p)};
+
+                glm::vec3 intersection {
+                    mTI.col1.x * u.x + mTI.col2.x * u.y + mTI.col3.x * u.z,
+                    mTI.col1.y * u.x + mTI.col2.y * u.y + mTI.col3.y * u.z,
+                    mTI.col1.z * u.x + mTI.col2.z * u.y + mTI.col3.z * u.z
+                };
+                bool inside = true;
+                for (size_t l = 0; l < planes.size(); l++) {
+                    if (l == i || l == k || l == j) continue;
+                    Plane p = planes[l];
+                    float res = dot3(p.n, (p.p - intersection));
+                    if (res > 0) inside = false;
+                }
+
+                if (inside) result.push_back(intersection);
+            }
+        }
+    }
 
     return result;
 }
