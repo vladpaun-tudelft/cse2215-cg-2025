@@ -1,6 +1,7 @@
 #include "glm/ext/vector_float2.hpp"
 #include "linear.h"
 // Suppress warnings in third-party code.
+#include <cstddef>
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
 #include <glm/gtc/matrix_transform.hpp>
@@ -216,11 +217,11 @@ std::vector<int> orderOfnGonVertices(const std::vector<glm::vec3> nGon)
     }
 
     std::vector<int> indexes(angles.size());
-    for (int i = 0; i < (int)indexes.size(); i++) {
-        indexes[i] = i;
+    for (size_t i = 0; i < indexes.size(); i++) {
+        indexes[i] = (int)i;
     }
 
-    std::sort(indexes.begin(), indexes.end(), [&](int a, int b) {return angles[a] < angles[b];});
+    std::sort(indexes.begin(), indexes.end(), [&](size_t a, size_t b) {return angles[a] < angles[b];});
     
     return indexes;
 }
@@ -255,11 +256,18 @@ std::array<glm::vec3, 4> rectangleOnPlane(const Plane& plane)
     glm::vec3 n = plane.n;
 
     glm::vec3 v3 = normalize(n);
-    glm::vec3 a;
-    float min = std::min({std::abs(v3.x),std::abs(v3.y),std::abs(v3.z)});
-    if (v3.x == min) a = {1,0,0};
-    else if (v3.y == min) a = {0,1,0};
-    else a = {0,0,1};
+    glm::vec3 a = {1.0f, 0.0f, 0.0f};
+    float ax = std::abs(v3.x);
+    float ay = std::abs(v3.y);
+    float az = std::abs(v3.z);
+
+    if (ax <= ay && ax <= az) {
+        a = {1.0f, 0.0f, 0.0f};
+    } else if (ay <= ax && ay <= az) {
+        a = {0.0f, 1.0f, 0.0f};
+    } else {
+        a = {0.0f, 0.0f, 1.0f};
+    }
     glm::vec3 v1 = normalize(cross3(v3, a));
     glm::vec3 v2 = normalize(cross3(v3, v1));
 
@@ -337,14 +345,39 @@ std::vector<glm::vec3> verticesFromPlanes(std::span<const Plane> planes)
 float areaOfTriangle(const std::array<glm::vec3, 3> triangle)
 {
     float result;
-    // Your solution here
+    glm::vec3 v1 = triangle[0];
+    glm::vec3 v2 = triangle[1];
+    glm::vec3 v3 = triangle[2];
+    float a = length(v3 - v2);
+    float b = length(v3 - v1);
+    float c = length(v2 - v1);
+    float s = (a + b + c) / 2;
+    result = std::sqrt(s * (s - a) * (s - b) * (s - c));
     return result;
 }
 
 std::vector<std::array<glm::vec3, 3>> splitNGonIntoTriangles(const std::vector<glm::vec3> nGon)
 {
     std::vector<std::array<glm::vec3, 3>> result;
-    // Your solution here
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+    int n = (int) nGon.size();
+    for (glm::vec3 v : nGon) {
+        x += v.x;
+        y += v.y;
+        z += v.z;
+    }
+    x /= (float)n;
+    z /= (float)n;
+    y /= (float)n;
+    glm::vec3 centroid {x,y,z};
+    for (size_t i = 0; i < nGon.size(); i++) {
+        size_t j = i + 1;
+        if (i == nGon.size() - 1) j = 0; 
+        std::array<glm::vec3, 3> triangle {centroid, nGon[i], nGon[j]};
+        result.push_back(triangle);
+    }
     return result;
 }
 
