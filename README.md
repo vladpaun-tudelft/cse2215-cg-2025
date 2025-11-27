@@ -7,7 +7,7 @@ TU Delft CSE2215 Computer Graphics — lab assignments
 
 To build and run any of the code in the practicals from the repo root:
 ```bash
-cmake -S ./practical<num>/ -B ./practical<num>/build/
+cmake -S ./practical<num>/ -B ./practical<num>/build/ -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 cmake --build ./practical<num>/build
 ./practical<num>/build/<executable>
 # Replace <num> with the no. of the practical and <executable> with the name of the executable file
