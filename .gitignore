@@ -12,6 +12,9 @@
 **/.ninja_deps
 **/.cache
 
+# Custom TUDelft framework
+**/framework/
+
 # Objects, libs, binaries
 *.o
 *.obj
