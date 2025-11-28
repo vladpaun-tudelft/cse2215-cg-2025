@@ -1,5 +1,6 @@
 #pragma once
 // Suppress warnings in third-party code.
+#include "glm/gtc/constants.hpp"
 #include "glm/matrix.hpp"
 #include <framework/disable_all_warnings.h>
 #include <vector>
@@ -28,37 +29,52 @@ enum class MovementCommand : int {
 // ==========================
 // =====    EXERCISE    =====
 // ==========================
+
+glm::ivec2 directionVec(int dir) {
+    switch (dir) {
+        case 0: return {0,1};
+        case 1: return {1,0};
+        case 2: return {0,-1};
+        case 3: return {-1,0};
+        default: return {0,0};
+    }
+}
 inline glm::mat3 computeMazeTransformation(std::span<const MovementCommand> moves)
 {
     glm::mat3 out = glm::identity<glm::mat3>();
-    int currDirection = 0;
     out = translationMatrix(glm::vec2{1,1}) * out;
-    std::vector<int> currPos = {1,1};
+    int direction = 0;
+    glm::ivec2 gridPos{1,1};
 
     for (MovementCommand move : moves) {
-        if (move == MovementCommand::MoveForward) {
-            glm::vec2 direction;
-            if (currDirection == 0) {
-                direction = {0,1};
-            } else if (currDirection == 1) {
-                direction = {1,0};
-            } else if (currDirection == 2) {
-                direction = {0,-1};
-            } else {
-                direction = {-1, 0};
+        switch (move) {
+            case MovementCommand::MoveForward: {
+                glm::ivec2 v = directionVec(direction);
+                gridPos += v;
+                out = translationMatrix(glm::vec2(v)) * out;
+                break;
             }
-            currPos = { currPos[0] + (int)direction.x, currPos[1] + (int)direction.y };
-            out = translationMatrix(direction) * out;
-        } else if (move == MovementCommand::RotateLeft) {
-            out = translationMatrix({ currPos[0], currPos[1] }) * rotationMatrix(glm::half_pi<float>()) * translationMatrix({ -currPos[0], -currPos[1] }) * out;
-            currDirection--;
-            if (currDirection < 0) currDirection = 3;
-        }else if (move == MovementCommand::RotateRight) {
-            out = translationMatrix({ currPos[0], currPos[1] }) * rotationMatrix(-glm::half_pi<float>()) * translationMatrix({ -currPos[0], -currPos[1] }) * out;
-            currDirection++;
-            if (currDirection > 3) currDirection = 0;
 
-        } else return out;
+            case MovementCommand::RotateLeft: {
+                glm::vec2 pivot = glm::vec2(gridPos) + glm::vec2(0.5f, 0.5f);
+                out = translationMatrix(pivot)
+                        * rotationMatrix(glm::half_pi<float>())
+                        * translationMatrix(-pivot)
+                        * out;
+                direction = (direction + 3) % 4;
+                break;
+            }
+            case MovementCommand::RotateRight: {
+                glm::vec2 pivot = glm::vec2(gridPos) + glm::vec2(0.5f, 0.5f);
+                out = translationMatrix(pivot)
+                    * rotationMatrix(- glm::half_pi<float>())
+                    * translationMatrix(-pivot)
+                    * out;
+                direction = (direction + 5) % 4;
+                break;
+            }
+            default: break;
+        }
     }
     return out;
 }
