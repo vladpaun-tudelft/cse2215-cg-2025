@@ -1,5 +1,6 @@
 #pragma once
 // Suppress warnings in third-party code.
+#include "glm/ext/matrix_transform.hpp"
 #include <framework/disable_all_warnings.h>
 DISABLE_WARNINGS_PUSH()
 #include <glm/glm.hpp>
@@ -45,10 +46,37 @@ inline TopSpinMatrices computeTopSpinTransformations(const TopSpinState& topSpin
     TopSpinMatrices matrices;
     // Place the supports at the origin.
     matrices.supports = glm::identity<glm::mat4>(); // DO NOT CHANGE THIS LINE
-    matrices.arms = glm::identity<glm::mat4>();
-    matrices.seats = glm::identity<glm::mat4>();
     for (int i = 0; i < 2 * seatsPerRow; ++i) {
         matrices.harnesses[i] = glm::identity<glm::mat4>();
+    }
+
+    glm::mat4 armRotation = rotationMatrix(armAngleInRadians, glm::vec3(1,0,0));
+    glm::mat4 armTranslation = translationMatrix(glm::vec3{0,11.0f,0});
+    matrices.arms = armTranslation * armRotation;
+
+    glm::mat4 seatsRotation = rotationMatrix(seatsAngleInRadians, glm::vec3{1,0,0});
+    glm::mat4 seatsTranslation = translationMatrix(glm::vec3{0,-(7.8f + 3.0f),0});
+    glm::mat4 seatsSmallTranslation = translationMatrix(glm::vec3{0,3,0});
+    glm::mat4 seatsSmallTranslationInverse = translationMatrix(glm::vec3{0,-3,0});
+
+    matrices.seats = matrices.arms * seatsTranslation * translationMatrix(glm::vec3 { 0, 3.0f, 0 }) * seatsRotation * translationMatrix(glm::vec3 { 0, -3.0f, 0 });
+
+    for (size_t i = 0; i <= seatsPerRow; i++) {
+        float bullshit = 16.0f / seatsPerRow;
+        float xPos = (float)(i+1) * bullshit - 8.0f - bullshit / 2;
+        glm::mat4 harnessRotation = rotationMatrix(harnessAngleInRadians, glm::vec3{1,0,0});
+        glm::mat4 putPivotBack = translationMatrix(glm::vec3{xPos, 1.52f, 0.95f});
+
+        matrices.harnesses[i] = matrices.seats * putPivotBack * harnessRotation;
+    }
+
+    for (size_t i = seatsPerRow; i <2 * seatsPerRow; i++) {
+        float bullshit = 16.0f / seatsPerRow;
+        float xPos = (float)(i+1 - seatsPerRow) * bullshit - 8.0f - bullshit / 2;
+        glm::mat4 harnessRotation = rotationMatrix(harnessAngleInRadians, glm::vec3 { 1, 0, 0 });
+        glm::mat4 putPivotBack = translationMatrix(glm::vec3 { xPos, 1.52f, -0.35f });
+
+        matrices.harnesses[i] = matrices.seats * putPivotBack * harnessRotation;
     }
     return matrices;
 }
