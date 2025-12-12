@@ -72,7 +72,7 @@ inline TopSpinMatrices computeTopSpinTransformations(const TopSpinState& topSpin
 
     for (size_t i = seatsPerRow; i <2 * seatsPerRow; i++) {
         float bullshit = 16.0f / seatsPerRow;
-        float xPos = (float)(i+1 - seatsPerRow) * bullshit - 8.0f - bullshit / 2;
+        float xPos = (float)(i+1 - seatsPerRow) * bullshit - 8.0f - bullshit / 2z;
         glm::mat4 harnessRotation = rotationMatrix(harnessAngleInRadians, glm::vec3 { 1, 0, 0 });
         glm::mat4 putPivotBack = translationMatrix(glm::vec3 { xPos, 1.52f, -0.35f });
 
