@@ -19,6 +19,8 @@ DISABLE_WARNINGS_POP()
 #include <vector>
 #include "common.h"
 
+#include <algorithm>
+
 void printVec3(const glm::vec3& vec)
 {
     std::cout << "(" << vec.x << "," << vec.y << "," << vec.z << ")" << std::endl;
@@ -54,13 +56,19 @@ Color debugColor(const MaterialInformation& materialInformation, const glm::vec3
 // Standard lambertian shading: I * Kd * dot(N,L), clamped to zero when the light is illuminating the surface from behind, where L is the light vector and I is the light color.
 Color diffuseOnly(const MaterialInformation& materialInformation, const glm::vec3& vertexPos, const glm::vec3& normal, const glm::vec3& lightPos, const Color& lightColor)
 {
-    return glm::vec3(0, 0, 1);
+    glm::vec3 L = glm::normalize(lightPos - vertexPos);
+    glm::vec3 N = glm::normalize(normal);
+    float ndotl = std::max(0.0f, glm::dot(L,N));
+
+    glm::vec3 color = materialInformation.Kd * lightColor;
+    return color * ndotl;
 }
 
 // Set the correct material of the evening car to appear with the same color under evening light as the day car at daylight
 MaterialInformation getMaterialEveningCar(const Color& dayLight, const Color& eveningLight, const MaterialInformation& dayCarMaterial)
 {
     MaterialInformation eveningCarMaterial = dayCarMaterial;
+    eveningCarMaterial.Kd = dayCarMaterial.Kd * dayLight / eveningLight;
     return eveningCarMaterial;
 }
 
@@ -69,7 +77,20 @@ MaterialInformation getMaterialEveningCar(const Color& dayLight, const Color& ev
 // E.g., for a plane, the light source below the plane cannot cast light on the top, hence, there can also not be any specularity.
 Color phongSpecularOnly(const MaterialInformation& materialInformation, const glm::vec3& vertexPos, const glm::vec3& normal, const glm::vec3& cameraPos, const glm::vec3& lightPos, const Color& lightColor)
 {
-    return glm::vec3(0, 1, 0);
+    float phong;
+    glm::vec3 V = glm::normalize(cameraPos - vertexPos);
+    glm::vec3 L = glm::normalize(lightPos - vertexPos);
+    glm::vec3 N = glm::normalize(normal);
+
+    float ndotl = glm::dot(N,L);
+    if (ndotl < 0.0f) {
+        return glm::vec3{0.0f};
+    }
+    glm::vec3 R = glm::normalize(2.0f * ndotl * N - L);
+    phong = glm::pow(std::max(0.0f,glm::dot(R,V)), materialInformation.shininess);
+    
+    glm::vec3 color = materialInformation.Ks * lightColor;
+    return color * phong;
 }
 
 // Blinn-Phong Shading Specularity (http://en.wikipedia.org/wiki/Blinn%E2%80%93Phong_shading_model)
@@ -77,15 +98,32 @@ Color phongSpecularOnly(const MaterialInformation& materialInformation, const gl
 // The same test, regarding on which side the light source is, should be used.
 Color blinnPhongSpecularOnly(const MaterialInformation& materialInformation, const glm::vec3& vertexPos, const glm::vec3& normal, const glm::vec3& cameraPos, const glm::vec3& lightPos, const Color& lightColor)
 {
+    float blinnPhong;
+    glm::vec3 V = glm::normalize(cameraPos - vertexPos);
+    glm::vec3 L = glm::normalize(lightPos - vertexPos);
+    glm::vec3 N = glm::normalize(normal);
+    float ndotl = glm::dot(N, L);
+    if (ndotl < 0.0f) {
+        return glm::vec3 { 0.0f };
+    }
 
-    return glm::vec3(0, 0, 1);
+    glm::vec3 H = glm::normalize(V + L);
+    blinnPhong = glm::pow(std::max(0.0f, glm::dot(H,N)), materialInformation.shininess);
+
+    glm::vec3 color = materialInformation.Ks * lightColor;
+    return color * blinnPhong;
 }
 
 // Difference between Phong and Blinn-Phong
 // The goal is to visualize the change in specularities, the assignment gives detailed instructions.
 Color diffPhongSpecularOnly(const glm::vec3& phong, const glm::vec3& blinnPhong)
 {
-    return glm::vec3(0, 0, 1);
+    float d = glm::length(phong - blinnPhong);
+    if (glm::length(phong) > glm::length(blinnPhong)) {
+        return 4.0f * glm::vec3 {d, 0.0f, 0.0f};
+    } else {
+        return 4.0f * glm::vec3 {0.0f, d, d};
+    }
 }
 
 // Gooch shading model
@@ -94,7 +132,26 @@ Color diffPhongSpecularOnly(const glm::vec3& phong, const glm::vec3& blinnPhong)
 // Here, you are asked to implement a toon shaded version, as described in the assignment.
 Color gooch(const MaterialInformation& materialInformation, const glm::vec3& vertexPos, const glm::vec3& normal, const glm::vec3& lightPos, const Color& lightColor, const int n)
 {
-    return glm::vec3(0, 0, 1);
+    glm::vec3 L = glm::normalize(lightPos - vertexPos);
+    glm::vec3 N = glm::normalize(normal);
+    float ndotl = glm::dot(N, L);
+
+    float goochB = materialInformation.goochB;
+    float goochY = materialInformation.goochY;
+    float goochAlpha = materialInformation.goochAlpha;
+    float goochBeta = materialInformation.goochBeta;
+
+    glm::vec3 kBlue = glm::vec3 {0,0,goochB};
+    glm::vec3 kYellow = glm::vec3 {goochY,goochY,0};
+
+    glm::vec3 kWarm = kYellow + goochBeta * materialInformation.Kd;
+    glm::vec3 kCool = kBlue + goochAlpha * materialInformation.Kd;
+
+    kWarm = glm::clamp(kWarm, 0.0f, 1.0f);
+    kCool = glm::clamp(kCool, 0.0f, 1.0f);
+
+    glm::vec3 color = lightColor * (((1 + ndotl) / 2.0f) * kWarm + (1 - (1 + ndotl) / 2.0f) * kCool);
+    return color;
 }
 
 // ======================= Thermosolar power plant part ==========================
