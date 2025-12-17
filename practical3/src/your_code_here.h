@@ -150,8 +150,17 @@ Color gooch(const MaterialInformation& materialInformation, const glm::vec3& ver
     kWarm = glm::clamp(kWarm, 0.0f, 1.0f);
     kCool = glm::clamp(kCool, 0.0f, 1.0f);
 
-    glm::vec3 color = lightColor * (((1 + ndotl) / 2.0f) * kWarm + (1 - (1 + ndotl) / 2.0f) * kCool);
-    return color;
+    int bins = 2 * n + 1;
+    float step = 2.0f / float(2 * n + 1);
+
+    int i = int((ndotl + 1) / step);
+    i = std::clamp(i, 0, 2*n);
+
+    float gooch = (float)i / (2.0f * (float)n);
+
+    glm::vec3 D = gooch * kWarm + (1 - gooch) * kCool;
+
+    return D * lightColor;
 }
 
 // ======================= Thermosolar power plant part ==========================
@@ -159,13 +168,19 @@ Color gooch(const MaterialInformation& materialInformation, const glm::vec3& ver
 // RETURN the reflected ray direction (vector) to help you  visualize the current configuration.
 glm::vec3 computeReflection(const glm::vec3& normal, const glm::vec3& incomingLightDirection)
 {
-    return normal;
+    glm::vec3 N = glm::normalize(normal);
+    glm::vec3 L = - glm::normalize(incomingLightDirection);
+
+    return glm::normalize(2.0f * glm::dot(N,L) * N - L);
 }
 
 // RETURN the optimal normal for the mirror, such that the light towards the given direction is reflected at mirrorPos towards the center of the pole (targetVertexPos)
 glm::vec3 optimalMirrorNormal(const glm::vec3& mirrorPos, const glm::vec3& incomingLightDirection, const glm::vec3& targetVertexPos)
 {
-    return glm::normalize(glm::vec3(1.0, 1.0, -1.0));
+    glm::vec3 L = - glm::normalize(incomingLightDirection);
+    glm::vec3 R = glm::normalize(targetVertexPos - mirrorPos);
+
+    return glm::normalize (L + R);
 }
 
 // ======================= Shading Model Viewer ==========================
