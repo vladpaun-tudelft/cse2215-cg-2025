@@ -1,6 +1,10 @@
 #ifndef SHADING_ASSIGNMENT_YOUR_CODE_HERE
 #define SHADING_ASSIGNMENT_YOUR_CODE_HERE
 
+#include "glm/fwd.hpp"
+#include "glm/trigonometric.hpp"
+#include <cstddef>
+#include <sys/types.h>
 #pragma once
 // Disable warnings in third-party code.
 #include <framework/disable_all_warnings.h>
@@ -192,6 +196,13 @@ void drawSurfacePoint()
 
     // use GL_POINTS to draw a point (quad) at the origin
     // use a color of your choice and the provided pointSize
+
+    glPointSize(pointSize);
+
+    glBegin(GL_POINTS);
+        glColor3f(1.0f,1.0f,0.0f);
+        glVertex3f(0.0f,0.0f,0.0f);
+    glEnd();
 }
 
 // DRAW SURFACE PATCH
@@ -201,6 +212,16 @@ void drawSurfacePatch()
 
     // Draw a surface patch at the origin with side lengths 2*halfLength using GL_QUADS
     // use a color of your choice
+
+    glBegin(GL_QUADS);
+    glColor3f(1.0f, 1.0f, 1.0f);
+
+    glVertex3f(halfLength, 0.0f, halfLength);
+    glVertex3f(halfLength, 0.0f, -halfLength);
+    glVertex3f(-halfLength, 0.0f, -halfLength);
+    glVertex3f(-halfLength, 0.0f, halfLength);
+
+    glEnd();
 }
 
 // DRAW SURFACE BOUNDARY
@@ -211,6 +232,25 @@ void drawSurfaceBoundary()
 
     // Draw the boundary of the surface using GL_LINES
     // use a color of your choice and the provided line width
+
+    glLineWidth(lineWidth);
+    
+    glBegin(GL_LINES);
+        glColor3f(0.0f,1.0f,1.0f);
+
+        glVertex3f(halfLength, 0.0f, halfLength);
+        glVertex3f(halfLength, 0.0f, -halfLength);
+
+        glVertex3f(halfLength, 0.0f, -halfLength);
+        glVertex3f(-halfLength, 0.0f, -halfLength);
+
+        glVertex3f(-halfLength, 0.0f, -halfLength);
+        glVertex3f(-halfLength, 0.0f, halfLength);
+
+        glVertex3f(-halfLength, 0.0f, halfLength);
+        glVertex3f(halfLength, 0.0f, halfLength);
+
+    glEnd();
 }
 
 // Draw Vector Helper for drawLightDirectionAndNormal(...)
@@ -221,6 +261,23 @@ void drawVector(const glm::vec3& origin, const glm::vec3& directionVector, const
 
     // Draw the directionVector starting at origin using GL_LINES and GL_POINTS for the tip.
     // Use the provided lineWidth, pointSize, and light color.
+    glm::vec3 head = origin + directionVector;
+
+    glLineWidth(lineWidth);
+    glPointSize(pointSize);
+
+    glBegin(GL_LINES);
+        glColor3f(color.x, color.y,color.z);
+
+        glVertex3f(origin.x, origin.y, origin.z);
+        glVertex3f(head.x,head.y,head.z);
+    glEnd();
+
+    glBegin(GL_POINTS);
+        glColor3f(color.x, color.y, color.z);
+
+        glVertex3f(head.x, head.y, head.z);
+    glEnd();
 }
 
 // DRAW LIGHT DIRECTION AND SURFACE NORMAL
@@ -251,10 +308,25 @@ std::vector<glm::vec3> generateSphereVertices(int n_latitude, int m_longitude)
     std::vector<glm::vec3> sphereVertices;
 
     // Add the top vertex of the sphere to sphereVertices
+    sphereVertices.push_back(glm::vec3{0.0,1.0,0.0});
 
     // Create a list of sphereVertices at the intersections of the aforementioned subdivision lines
+    for (int i = 1; i <= n_latitude - 1; ++i) {
+        float theta = glm::pi<float>() * (float(i) / float(n_latitude));
+
+        for (int j = 0; j < m_longitude; ++j) {
+            float phi = glm::two_pi<float>() * (float(j) / float(m_longitude));
+
+            float x = glm::sin(theta) * glm::sin(phi);
+            float y = glm::cos(theta);
+            float z = glm::sin(theta) * glm::cos(phi);
+
+            sphereVertices.push_back({ x, y, z });
+        }
+    }
 
     // Add the bottom vertex of the sphere to sphereVertices
+    sphereVertices.push_back(glm::vec3 { 0.0, -1.0, 0.0 });
 
     if (!sphereVertices.empty()) {
         assert(sphereVertices.size() == (n_latitude - 1) * m_longitude + 2);
@@ -274,9 +346,9 @@ std::vector<glm::vec3> generateSphereVertices(int n_latitude, int m_longitude)
 // The solution will look trivial, we just want you to quickly reflect on what we are actually computing/visualising here.
 void getReflectedLightInputParameters(const std::vector<glm::vec3>& sphereVertices, glm::vec3& position, glm::vec3& normalVector, std::vector<glm::vec3>& viewDirections)
 {
-    // position = ...
-    // normalVector = ...
-    // viewDirections = ...
+    position = {0.0f,0.0f,0.0f};
+    normalVector = {0.0f,1.0f,0.0f};
+    viewDirections = sphereVertices;
 }
 
 // Displace all the vertices depending on the intensity
@@ -286,6 +358,17 @@ void displaceVerticesByIntensity(std::span<const glm::vec3> vertexColors, std::s
 {
     // Write the output to sphereVertices:
     //  sphereVertices[i] = glm::vec3(0);
+    glm::vec3 N {0.0f,1.0f,0.0f};
+
+    for (size_t i = 0; i < sphereVertices.size(); i++) {
+        float ndotl = glm::dot(N, sphereVertices[i]);
+
+        if (ndotl <= 0)
+            sphereVertices[i] = glm::vec3(0);
+        else {
+            sphereVertices[i] = sphereVertices[i] * glm::length(vertexColors[i]);
+        }
+    }
 }
 
 // VISUALIZATION MODES POINTS AND VECTORS
@@ -298,6 +381,18 @@ void drawSphereGrid(std::span<const glm::vec3> vertices, std::span<const glm::ve
     const float pointSize = 10;
 
     // Given the displaced vertices and the vertex colors, draw the deformed sphere using GL_POINTS
+
+    glPointSize(10);
+
+    glBegin(GL_POINTS);
+
+        for (size_t i = 0; i < vertices.size(); i++) {
+            glm::vec3 color = vertexColors[i];
+            glm::vec3 vertex = vertices[i];
+            glColor3f(color.x,color.y,color.z);
+            glVertex3f(vertex.x,vertex.y,vertex.z);
+        }
+    glEnd();
 }
 
 // Visualization mode Vectors
@@ -309,6 +404,28 @@ void drawSphereVectors(std::span<const glm::vec3> vertices, std::span<const glm:
 
     // Draw the displacement vectors using GL_LINES and GL_POINTS for the tip
     // For the lines you can use a color of your choice, use the provided pointSize and lineWidth
+
+    glPointSize(10);
+    glLineWidth(lineWidth);
+
+    glBegin(GL_POINTS);
+        for (size_t i = 0; i < vertices.size(); i++) {
+            glm::vec3 color = vertexColors[i];
+            glm::vec3 vertex = vertices[i];
+            glColor3f(color.x, color.y, color.z);
+            glVertex3f(vertex.x, vertex.y, vertex.z);
+        }
+    glEnd();
+
+    glBegin(GL_LINES);
+        for (size_t i = 0; i < vertices.size(); i++) {
+            glm::vec3 color = vertexColors[i];
+            glm::vec3 vertex = vertices[i];
+            glColor3f(color.x, color.y, color.z);
+            glVertex3f(0.0f,0.0f,0.0f);
+            glVertex3f(vertex.x, vertex.y, vertex.z);
+        }
+    glEnd();
 }
 
 // VISUALIZATION MODE MESH
@@ -331,11 +448,28 @@ void generateSphereMesh(
     // Create a list of triangles for the connection of the vertices on the first and last lines with the corresponding poles
     // Each triangle is defined by a uvec3 containing the indices of the three vertices in sphereVertices
 
-    if (!quads.empty()) {
-        assert(quads.size() == m_longitude * (n_latitude - 2));
+    uint top = 0;
+    uint rings = n_latitude - 1;
+    uint bottom = 1 + rings * m_longitude;
+
+    for (uint j = 0; j < m_longitude; j++) {
+        uint jn = (j + 1) % m_longitude;
+        triangles.push_back({top,j+1, jn+1});
     }
-    if (!triangles.empty()) {
-        assert(triangles.size() == m_longitude * 2);
+
+    for (uint j = 0; j < m_longitude; j++) {
+        uint jn = (j+1) % m_longitude;
+        triangles.push_back({ bottom, (rings - 1) * m_longitude + 1 + j, (rings - 1) * m_longitude + 1 + jn});
+    }
+
+    for (uint r = 0; r+1 < rings; r++) {
+        uint a = 1 + r * m_longitude;
+        uint b = 1 + (r + 1) * m_longitude;
+
+        for (uint j = 0; j < m_longitude; j++) {
+            uint jn = (j+1) % m_longitude;
+            quads.push_back(glm::uvec4{a+j, a + jn, b + jn, b + j});
+        }
     }
 }
 
@@ -350,7 +484,46 @@ void drawSphereMesh(
 
     // Loop through the triangles and draw them using GL_TRIANGLES
 
+    glBegin(GL_TRIANGLES);
+    for (size_t i = 0; i < triangles.size(); i++) {
+        glm::uvec3 triangle = triangles[i];
+        glm::vec3 c1 = vertexColors[triangle.x];
+        glm::vec3 v1 = vertices[triangle.x];
+        glm::vec3 c2 = vertexColors[triangle.y];
+        glm::vec3 v2 = vertices[triangle.y];
+        glm::vec3 c3 = vertexColors[triangle.z];
+        glm::vec3 v3 = vertices[triangle.z];
+        glColor3f(c1.x, c1.y, c1.z);
+        glVertex3f(v1.x, v1.y, v1.z);
+        glColor3f(c2.x, c2.y, c2.z);
+        glVertex3f(v2.x, v2.y, v2.z);
+        glColor3f(c3.x, c3.y, c3.z);
+        glVertex3f(v3.x, v3.y, v3.z);
+    }
+    glEnd();
+
     // Loop through the quads and draw them using GL_QUADS
+    glBegin(GL_QUADS);
+    for (size_t i = 0; i < quads.size(); i++) {
+        glm::uvec4 quad = quads[i];
+        glm::vec3 c1 = vertexColors[quad.x];
+        glm::vec3 v1 = vertices[quad.x];
+        glm::vec3 c2 = vertexColors[quad.y];
+        glm::vec3 v2 = vertices[quad.y];
+        glm::vec3 c3 = vertexColors[quad.z];
+        glm::vec3 v3 = vertices[quad.z];
+        glm::vec3 c4 = vertexColors[quad.w];
+        glm::vec3 v4 = vertices[quad.w];
+        glColor3f(c1.x, c1.y, c1.z);
+        glVertex3f(v1.x, v1.y, v1.z);
+        glColor3f(c2.x, c2.y, c2.z);
+        glVertex3f(v2.x, v2.y, v2.z);
+        glColor3f(c3.x, c3.y, c3.z);
+        glVertex3f(v3.x, v3.y, v3.z);
+        glColor3f(c4.x, c4.y, c4.z);
+        glVertex3f(v4.x, v4.y, v4.z);
+    }
+    glEnd();
 }
 
 #endif // SHADING_ASSIGNMENT_YOUR_CODE_HERE
