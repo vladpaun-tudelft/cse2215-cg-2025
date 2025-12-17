@@ -317,9 +317,9 @@ std::vector<glm::vec3> generateSphereVertices(int n_latitude, int m_longitude)
         for (int j = 0; j < m_longitude; ++j) {
             float phi = glm::two_pi<float>() * (float(j) / float(m_longitude));
 
-            float x = glm::sin(theta) * glm::sin(phi);
+            float x = glm::sin(theta) * glm::cos(phi);
             float y = glm::cos(theta);
-            float z = glm::sin(theta) * glm::cos(phi);
+            float z = glm::sin(theta) * glm::sin(phi);
 
             sphereVertices.push_back({ x, y, z });
         }
