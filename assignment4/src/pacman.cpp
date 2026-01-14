@@ -1,4 +1,7 @@
 #include "pacman.h"
+#include "game.h"
+#include <algorithm>
+#include <cstddef>
 #include <framework/opengl_includes.h>
 DISABLE_WARNINGS_PUSH()
 #include <glm/gtc/type_ptr.hpp>
@@ -27,6 +30,21 @@ std::vector<MazeTile> generateMaze(const glm::ivec2 mazeCenter, const Game::Maze
     assert(!maze.empty());
     const size_t mazeSizeX = maze[0].size();
 
+    for (size_t y = 0; y < mazeSizeY; y++) {
+        for (size_t x=0; x < mazeSizeX; x++) {
+            float world_center_x = (float)((int)x - mazeCenter.x) * cell_size.x;
+            float world_center_y = (float)((int)y - mazeCenter.y) * cell_size.y;
+            float world_z = -time;
+            glm::vec4 color = maze[y][x] ? color_filled_cell : color_empty_cell;
+            glm::vec3 v1 = { world_center_x - cell_size.x / 2, world_center_y + cell_size.y / 2, world_z };
+            glm::vec3 v2 = { world_center_x + cell_size.x / 2, world_center_y + cell_size.y / 2, world_z };
+            glm::vec3 v3 = { world_center_x + cell_size.x / 2, world_center_y - cell_size.y / 2, world_z };
+            glm::vec3 v4 = { world_center_x - cell_size.x / 2, world_center_y - cell_size.y / 2, world_z };
+            
+            tiles.push_back({v1,v2,v3,v4,color});
+        }
+    }
+
 
     return tiles;
 }
@@ -35,6 +53,16 @@ std::vector<MazeTile> generateMaze(const glm::ivec2 mazeCenter, const Game::Maze
  * Draw the maze of the previously generated maze tiles using GL_QUADS
 */
 void drawMaze(std::span<const MazeTile> tiles) {
+    glBegin(GL_QUADS);
+    for (MazeTile tile : tiles) {
+        glColor4f(tile.color.x,tile.color.y,tile.color.z,tile.color.w);
+
+        glVertex3f(tile.v1.x, tile.v1.y, tile.v1.z);
+        glVertex3f(tile.v2.x, tile.v2.y, tile.v2.z);
+        glVertex3f(tile.v3.x, tile.v3.y, tile.v3.z);
+        glVertex3f(tile.v4.x, tile.v4.y, tile.v4.z);
+    }
+    glEnd();
 }
 
 
@@ -50,6 +78,15 @@ std::vector<glm::vec2> generateCirclePoints(float radius, glm::vec2 center, size
 {
     std::vector<glm::vec2> points (numPoints);
 
+    float two_pi = 2 * glm::pi<float>();
+    float step = two_pi / (float)numPoints;
+
+    for (size_t i = 0; i < numPoints; i++) {
+        float angle = step * (float)i;
+        float x = center.x + radius * glm::sin(angle);
+        float y = center.y + radius * glm::cos(angle);
+        points[i]={x,y};
+    }
 
     return points;
 }
@@ -61,6 +98,10 @@ std::vector<glm::vec2> generateCirclePoints(float radius, glm::vec2 center, size
  */
 void drawPolygon(std::span<const glm::vec2> polygon, const float time, const glm::vec4& color)
 {
+    glBegin(GL_POLYGON);
+        glColor4f(color.x,color.y,color.z,color.w);
+        for (glm::vec2 p:polygon) glVertex3f(p.x,p.y,-time);
+    glEnd();
 }
 
 /*
@@ -71,7 +112,10 @@ void drawPolygon(std::span<const glm::vec2> polygon, const float time, const glm
 void drawPolygonOutline(std::span<const glm::vec2> polygon, const float time, const glm::vec4& color)
 {
     glLineWidth(2);
-
+    glBegin(GL_LINE_LOOP);
+        glColor4f(color.x,color.y,color.z,color.w);
+        for (glm::vec2 p:polygon) glVertex3f(p.x,p.y,-time);
+    glEnd();
 }
 
 /*
@@ -86,7 +130,9 @@ std::vector<glm::vec2> applyInitialPosition(
         const glm::vec2& initialPosition) {
 
     std::vector<glm::vec2> translatedPolygon;
-    translatedPolygon.assign(polygon.begin(), polygon.end());
+    // translatedPolygon.assign(polygon.begin(), polygon.end());
+
+    for (glm::vec2 p:polygon) translatedPolygon.push_back({p.x+initialPosition.x,p.y+initialPosition.y});
 
 
     return translatedPolygon;
@@ -105,8 +151,19 @@ std::vector<glm::vec2> applyInitialPosition(
 std::vector<glm::vec2> applyMovementInTime(std::span<const glm::vec2> polygon, std::span<const glm::vec2> motionSteps, const float t) {
 
     std::vector<glm::vec2> translatedPolygon;
-    translatedPolygon.assign(polygon.begin(), polygon.end());
+    // translatedPolygon.assign(polygon.begin(), polygon.end());
+    size_t bitch = (size_t) std::floor(t);
+    size_t tt = std::clamp(bitch,(size_t)0,motionSteps.size());
+    glm::vec2 initialPosition = {0.0,0.0};
+    for (size_t i = 0; i < tt; i++) {
+        initialPosition += motionSteps[i];
+    }
+    if (bitch < motionSteps.size()) {
+        initialPosition += (t - (float)bitch) * motionSteps[bitch];
+    }
 
+    for (glm::vec2 p : polygon)
+        translatedPolygon.push_back({ p.x + initialPosition.x, p.y + initialPosition.y });
 
     return translatedPolygon;
 }
@@ -188,6 +245,59 @@ std::tuple<Hull, Vertices> generateHullGeometry(
     const size_t polygonN = polygon.size();
     const size_t sequenceLength = motionSteps.size();
 
+    std::vector<std::pair<glm::vec2, int>> linearDisplacementSteps;
+
+    if (!motionSteps.empty()) {
+        glm::vec2 dir = motionSteps[0];
+        glm::vec2 curr = dir;
+        int duration = 1;
+
+        for (size_t i = 1; i < sequenceLength; i++) {
+            if (motionSteps[i] == dir) {
+                curr += motionSteps[i];
+                duration++;
+            }
+            else {
+                linearDisplacementSteps.push_back({curr,duration});
+                dir = motionSteps[i];
+                curr = dir;
+                duration = 1;
+            }
+        }
+        linearDisplacementSteps.push_back({curr,duration});
+    }
+
+    float t = 0.0;
+    glm::vec2 currPos = initialPosition;
+
+    for (glm::vec2 p:polygon) {
+        vertices.push_back({p.x + currPos.x, p.y + currPos.y, -t});
+    }
+    for (std::pair<glm::vec2,int> step:linearDisplacementSteps) {
+        currPos += step.first;
+        t += (float)step.second;
+        for (glm::vec2 p:polygon) {
+            vertices.push_back({p.x + currPos.x, p.y + currPos.y, -t});
+        }
+    }
+
+    const size_t ringCount = linearDisplacementSteps.size() + 1;
+    for (size_t r = 0; r + 1 < ringCount; r++) {
+        uint ring0StartIdx = (uint)(r * polygonN);
+        uint ring1StartIdx = (uint)((r + 1) * polygonN);
+        HullSegment segment;
+        for (size_t i = 0; i < polygonN; i++) {
+            uint next = (uint)((i + 1) % polygonN);
+            uint a = ring0StartIdx + (uint)i;
+            uint b = ring0StartIdx + next;
+            uint c = ring1StartIdx + next;
+            uint d = ring1StartIdx + (uint)(i);
+            segment.push_back({a, b, c});
+            segment.push_back({a, c, d});
+        }
+        hull.push_back(segment);
+    }
+
 
     return {hull, vertices};
 }
@@ -200,7 +310,16 @@ std::tuple<Hull, Vertices> generateHullGeometry(
  */
 void drawHullMesh(const Vertices& vertices, const Hull& hull, glm::vec4 color)
 {
-
+    glBegin(GL_TRIANGLES);
+        glColor4f(color.x,color.y,color.z,color.w);
+        for (HullSegment hs : hull) {
+            for (Face f : hs) {
+                glVertex3f(vertices[f.x].x, vertices[f.x].y, vertices[f.x].z);
+                glVertex3f(vertices[f.y].x, vertices[f.y].y, vertices[f.y].z);
+                glVertex3f(vertices[f.z].x, vertices[f.z].y, vertices[f.z].z);
+            }
+        }
+    glEnd();
 }
 
 /*
