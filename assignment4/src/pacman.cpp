@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <framework/opengl_includes.h>
+#include <limits>
 DISABLE_WARNINGS_PUSH()
 #include <glm/gtc/type_ptr.hpp>
 DISABLE_WARNINGS_POP()
@@ -340,8 +341,15 @@ std::vector<Ray> generatePacmanRays (
 
     if (t >= (float) motionSteps.size()) { return {}; }
     std::vector<Ray> rays {};
-
-
+    
+    std::vector<glm::vec2> newPolygon = applyInitialPosition(polygon,initialPosition);
+    newPolygon = applyMovementInTime(newPolygon,motionSteps,t);
+    glm::vec3 dir = {motionSteps[(size_t)std::floor(t)],-1.0};
+    dir = glm::normalize(dir);
+    for (glm::vec2 o:newPolygon) {
+        glm::vec3 origin = {o,-t};
+        rays.push_back({origin, dir});
+    }
 
 
     return rays;
