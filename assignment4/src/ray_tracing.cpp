@@ -18,23 +18,25 @@ DISABLE_WARNINGS_POP()
 
 bool pointInTriangle(const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& n, const glm::vec3& p)
 {
-    const glm::dvec3 dv0(v0);
-    const glm::dvec3 dv1(v1);
-    const glm::dvec3 dv2(v2);
-    const glm::dvec3 dn(n);
-    const glm::dvec3 dp(p);
+    glm::vec3 a = v0;
+    glm::vec3 b = v1;
+    glm::vec3 c = v2;
 
-    const glm::dvec3 e0 = dv1 - dv0;
-    const glm::dvec3 e1 = dv2 - dv1;
-    const glm::dvec3 e2 = dv0 - dv2;
+    glm::vec3 normal = glm::cross((b-a),(c-a));
 
-    const double c0 = glm::dot(dn, glm::cross(e0, dp - dv0));
-    const double c1 = glm::dot(dn, glm::cross(e1, dp - dv1));
-    const double c2 = glm::dot(dn, glm::cross(e2, dp - dv2));
+    glm::vec3 na = glm::cross((c - b), (p - b));
+    glm::vec3 nb = glm::cross((a - c), (p - c));
+    glm::vec3 nc = glm::cross((b - a), (p - a));
 
-    const bool has_neg = (c0 < 0.0) || (c1 < 0.0) || (c2 < 0.0);
-    const bool has_pos = (c0 > 0.0) || (c1 > 0.0) || (c2 > 0.0);
-    return !(has_neg && has_pos);
+    float alpha = glm::dot(normal, na) / glm::dot(normal, normal);
+    float beta = glm::dot(normal, nb) / glm::dot(normal, normal);
+    float gamma = glm::dot(normal, nc) / glm::dot(normal, normal);
+
+    if ((alpha >= 0.0f && beta >= 0.0f && gamma >= 0.0f) ||
+        (alpha <= 0.0f && beta <= 0.0f && gamma <= 0.0f)) {
+        return true;
+    }
+    return false;
 }
 
 bool intersectRayWithPlane(const Plane& plane, Ray& ray)
@@ -131,4 +133,3 @@ bool intersectTestScene (const TestScene &testScene, Ray &ray) {
                                     testScene.vertices[testScene.triangles[0].vertex_indices[2]],
                                     ray);
 }
-
