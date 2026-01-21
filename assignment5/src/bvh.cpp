@@ -17,6 +17,7 @@
 #include <limits>
 #include <numeric>
 #include <type_traits>
+#include <vector>
 
 
 // Helper method to fill in hitData object.
@@ -284,48 +285,31 @@ void BVH::buildRecursive(const Scene& scene, std::span<Primitive> primitives, ui
     }
 }
 
-static bool intersectRayWithAABB(const AxisAlignedBox& box, const Ray& ray, float& tminOut)
+static bool intersectRayWithAABB(const AxisAlignedBox& aabb, const Ray& ray)
 {
-    float tmin = std::numeric_limits<float>::lowest();
-    float tmax = std::numeric_limits<float>::max();
+    float txmin = (aabb.lower.x - ray.origin.x) / ray.direction.x;
+    float txmax = (aabb.upper.x - ray.origin.x) / ray.direction.x;
 
-    const glm::vec3& o = ray.origin;
-    const glm::vec3& d = ray.direction;
+    float txin = std::min(txmin,txmax);
+    float txout = std::max(txmin,txmax);
 
-    for (int axis = 0; axis < 3; ++axis) {
-        const float origin = axis == 0 ? o.x : (axis == 1 ? o.y : o.z);
-        const float dir = axis == 0 ? d.x : (axis == 1 ? d.y : d.z);
-        const float minb = axis == 0 ? box.lower.x : (axis == 1 ? box.lower.y : box.lower.z);
-        const float maxb = axis == 0 ? box.upper.x : (axis == 1 ? box.upper.y : box.upper.z);
+    float tymin = (aabb.lower.y - ray.origin.y) / ray.direction.y;
+    float tymax = (aabb.upper.y - ray.origin.y) / ray.direction.y;
 
-        if (dir == 0.0f) {
-            if (origin < minb || origin > maxb) {
-                return false;
-            }
-            continue;
-        }
+    float tyin = std::min(tymin, tymax);
+    float tyout = std::max(tymin, tymax);
 
-        float inv = 1.0f / dir;
-        float t0 = (minb - origin) * inv;
-        float t1 = (maxb - origin) * inv;
-        if (t0 > t1) {
-            std::swap(t0, t1);
-        }
+    float tzmin = (aabb.lower.z - ray.origin.z) / ray.direction.z;
+    float tzmax = (aabb.upper.z - ray.origin.z) / ray.direction.z;
 
-        tmin = std::max(tmin, t0);
-        tmax = std::min(tmax, t1);
-        if (tmin > tmax) {
-            return false;
-        }
-    }
+    float tzin = std::min(tzmin, tzmax);
+    float tzout = std::max(tzmin, tzmax);
 
-    tminOut = tmin;
-    if (tmax < 0.0f) {
-        return false;
-    }
-    if (tmin > ray.t) {
-        return false;
-    }
+    float tin = std::max(txin,std::max(tyin,tzin));
+    float tout = std::min(txout,std::min(tyout,tzout));
+
+    if (tin > tout) return false;
+    if (tout < 0) return false;
     return true;
 }
 
@@ -392,8 +376,7 @@ bool intersectRayWithBVH(const Scene& scene, const BVHInterface& bvh, Ray& ray, 
 
         BVHInterface::Node node = nodes[idx];
 
-        float t;
-        if (!intersectRayWithAABB(node.aabb,ray,t)) continue;
+        if (!intersectRayWithAABB(node.aabb,ray)) continue;
 
         if (node.isLeaf()) {
             uint32_t offset = node.primitiveOffset();
@@ -426,29 +409,28 @@ void BVH::buildNumLevels()
         return;
     }
 
-    struct StackItem {
-        uint32_t idx;
-        uint32_t level;
-    };
+    std::vector<std::pair<uint32_t, uint32_t>> stack;
+    stack.push_back({RootIndex,0});
 
-    uint32_t maxLevel = 0;
-    std::vector<StackItem> stack;
-    stack.push_back({ RootIndex, 0 });
+    uint32_t max_level = 0;
 
     while (!stack.empty()) {
-        StackItem item = stack.back();
+        std::pair<uint32_t, uint32_t> pair = stack.back();
         stack.pop_back();
 
-        const Node& node = m_nodes[item.idx];
-        maxLevel = std::max(maxLevel, item.level);
+        uint32_t idx = pair.first;
+        uint32_t level = pair.second;
+        if (level > max_level) max_level = level;
+
+        Node node = m_nodes[idx];
 
         if (!node.isLeaf()) {
-            stack.push_back({ node.leftChild(), item.level + 1 });
-            stack.push_back({ node.rightChild(), item.level + 1 });
+            stack.push_back({node.leftChild(), level+1});
+            stack.push_back({node.rightChild(), level+1});
         }
     }
 
-    m_numLevels = maxLevel + 1;
+    m_numLevels = max_level + 1;
 }
 
 // TODO: Visual Debug
@@ -460,24 +442,25 @@ void BVH::buildNumLeaves()
         return;
     }
 
-    uint32_t count = 0;
     std::vector<uint32_t> stack;
     stack.push_back(RootIndex);
+
+    uint32_t num_leaves = 0;
 
     while (!stack.empty()) {
         uint32_t idx = stack.back();
         stack.pop_back();
 
-        const Node& node = m_nodes[idx];
+        Node node = m_nodes[idx];
+
         if (node.isLeaf()) {
-            ++count;
+            num_leaves++;
         } else {
             stack.push_back(node.leftChild());
             stack.push_back(node.rightChild());
         }
     }
-
-    m_numLeaves = count;
+    m_numLeaves = num_leaves;
 }
 
 // TODO: Visual Debug
@@ -486,31 +469,25 @@ void BVH::buildNumLeaves()
 // of all nodes on the selected level.
 void BVH::debugDrawLevel(int level)
 {
-    if (level < 0 || m_nodes.empty()) {
-        return;
-    }
+    if (m_nodes.empty()) return;
 
-    struct StackItem {
-        uint32_t idx;
-        uint32_t level;
-    };
-
-    std::vector<StackItem> stack;
+    std::vector<std::pair<uint32_t, uint32_t>> stack;
     stack.push_back({ RootIndex, 0 });
 
     while (!stack.empty()) {
-        StackItem item = stack.back();
+        std::pair<uint32_t, uint32_t> pair = stack.back();
         stack.pop_back();
 
-        const Node& node = m_nodes[item.idx];
-        if (static_cast<int>(item.level) == level) {
-            drawAABB(node.aabb, DrawMode::Wireframe, glm::vec3(0.05f, 1.0f, 0.05f), 0.25f);
-            continue;
-        }
+        uint32_t idx = pair.first;
+        uint32_t curr_level = pair.second;
 
-        if (!node.isLeaf() && item.level < static_cast<uint32_t>(level)) {
-            stack.push_back({ node.leftChild(), item.level + 1 });
-            stack.push_back({ node.rightChild(), item.level + 1 });
+        Node node = m_nodes[idx];
+
+        if (curr_level == level) {
+            drawAABB(node.aabb, DrawMode::Wireframe, {0.0,1.0,0.0}, 0.5);
+        } else if (curr_level < level && !node.isLeaf()) {
+            stack.push_back({ node.leftChild(), curr_level + 1 });
+            stack.push_back({ node.rightChild(), curr_level + 1 });
         }
     }
 }
@@ -523,31 +500,37 @@ void BVH::debugDrawLevel(int level)
 //              (Hint: not the index of the i-th node, but of the i-th leaf!)
 void BVH::debugDrawLeaf(int leafIndex)
 {
-    if (leafIndex < 0 || m_nodes.empty()) {
+    if (m_nodes.empty()) {
         return;
     }
 
-    int currentLeaf = 0;
     std::vector<uint32_t> stack;
     stack.push_back(RootIndex);
+
+    uint32_t curr_index = 0;
 
     while (!stack.empty()) {
         uint32_t idx = stack.back();
         stack.pop_back();
 
-        const Node& node = m_nodes[idx];
+        Node node = m_nodes[idx];
+
         if (node.isLeaf()) {
-            if (currentLeaf == leafIndex) {
-                drawAABB(node.aabb, DrawMode::Wireframe, glm::vec3(0.05f, 1.0f, 0.05f), 0.25f);
-                uint32_t offset = node.primitiveOffset();
-                uint32_t count = node.primitiveCount();
-                for (uint32_t i = 0; i < count; ++i) {
-                    const Primitive& prim = m_primitives[offset + i];
-                    drawTriangle(prim.v0, prim.v1, prim.v2);
+            if (curr_index == leafIndex) {
+                drawAABB(node.aabb, DrawMode::Wireframe);
+                
+                uint32_t primitive_offset = node.primitiveOffset();
+                uint32_t primitive_count = node.primitiveCount();
+
+                for (size_t i = primitive_offset; i < primitive_offset + primitive_count; i++) {
+                    Primitive p = m_primitives[i];
+                    drawTriangle(p.v0, p.v1, p.v2);
                 }
+
                 return;
             }
-            ++currentLeaf;
+
+            curr_index++;
         } else {
             stack.push_back(node.leftChild());
             stack.push_back(node.rightChild());
