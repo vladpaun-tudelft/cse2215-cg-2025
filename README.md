@@ -1,4 +1,8 @@
 # cse2215-cg-2025
+
+> **Archived repository**  
+> Personal archive of my TU Delft CSE2025 coursework. This repo is not maintained and is kept for reference only.
+
 TU Delft CSE2215 Computer Graphics — lab assignments 
 
 > This Course uses a custom framework for creating the graphics. Each assignment needs to have this framework in their directories. In the interest of not bloating up this repo, a single copy of the frameowrk has been made at ```./framework.example/```.
