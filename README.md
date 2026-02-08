@@ -1,7 +1,7 @@
 # cse2215-cg-2025
 
 > **Archived repository**  
-> Personal archive of my TU Delft CSE2025 coursework. This repo is not maintained and is kept for reference only.
+> Personal archive of my TU Delft CSE2215 coursework. This repo is not maintained and is kept for reference only.
 
 TU Delft CSE2215 Computer Graphics — lab assignments 
 
